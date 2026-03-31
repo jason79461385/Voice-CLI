@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="VoiceAgent.Win.WelcomeWindow"
+        Title="歡迎使用 VoiceAssistant" Width="500" Height="550"
+        WindowStartupLocation="CenterScreen" Background="#F5F5F5">
+    
+    <ScrollViewer>
+        <StackPanel Margin="30" Spacing="15">
+            <TextBlock Text="🎙️ VoiceAssistant" FontSize="28" FontWeight="Bold" Foreground="#1E1E1E"/>
+            <TextBlock Text="您的個人語音自動化助理已就緒！" FontSize="14" Foreground="#666666"/>
+            
+            <Separator Margin="0,10"/>
+
+            <TextBlock Text="核心操作" FontWeight="Bold" FontSize="16"/>
+            <Border Background="White" CornerRadius="8" Padding="15" BoxShadow="0 2 5 0 #22000000">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="• 連按兩下 [Ctrl]：開啟 / 關閉語音輸入" Foreground="#333333"/>
+                    <TextBlock Text="• 檔案拖曳：將 Google 金鑰 JSON 直接拉入懸浮視窗即可完成綁定" Foreground="#333333" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="進階指令 (CLI)" FontWeight="Bold" FontSize="16" Margin="0,10,0,0"/>
+            <Border Background="#1E1E1E" CornerRadius="8" Padding="15">
+                <StackPanel Spacing="5">
+                    <TextBlock Text="VoiceAssistant -addword &quot;我的地址&quot; &quot;台北市...&quot;" Foreground="#00FFCC" FontSize="13" FontFamily="Consolas"/>
+                    <TextBlock Text="VoiceAssistant -listwords" Foreground="#00FFCC" FontSize="13" FontFamily="Consolas"/>
+                    <TextBlock Text="VoiceAssistant -autostart true" Foreground="#00FFCC" FontSize="13" FontFamily="Consolas"/>
+                    <TextBlock Text="VoiceAssistant -help (查看完整指令)" Foreground="#00FFCC" FontSize="13" FontFamily="Consolas"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="💡 提示：本程式已自動嘗試註冊環境變數。若指令無效，請重啟您的終端機視窗。" 
+                       FontSize="12" Foreground="#888888" TextWrapping="Wrap" FontStyle="Italic"/>
+
+            <Button Content="Start!!!" 
+                    HorizontalAlignment="Center" 
+                    Margin="0,20,0,0" 
+                    Padding="30,10"
+                    Background="#007ACC" 
+                    Foreground="White"
+                    FontWeight="Bold"
+                    Click="CloseClick"/>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

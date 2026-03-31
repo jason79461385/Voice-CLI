@@ -1,10 +1,12 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.Platform.Storage; // 🌟 就是少這行，讓它認識 TryGetLocalPath！
 using SharpHook;
 using SharpHook.Native;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace VoiceAgent.Win
@@ -18,21 +20,122 @@ namespace VoiceAgent.Win
         public MainWindow()
         {
             InitializeComponent();
-            string keyPath = "voice_agent_config.txt";
-            if (File.Exists(keyPath))
+
+            // 🌟 【新增】智慧型自動註冊：啟動即自動加入環境變數
+            AutoRegisterEnvironmentPath();
+
+            // 🌟 註冊 Avalonia 的拖曳放入事件
+            AddHandler(DragDrop.DropEvent, OnFileDropped);
+
+            CheckAndLoadKey();
+
+            _hook = new TaskPoolGlobalHook();
+            _hook.KeyPressed += OnKeyPressed;
+            _hook.RunAsync();
+        }
+        private void AutoRegisterEnvironmentPath()
+        {
+            try
             {
-                string path = File.ReadAllText(keyPath).Trim();
-                if (File.Exists(path))
+                // 1. 取得當前 exe 所在的資料夾路徑
+                string? exePath = Environment.ProcessPath;
+                string? dirPath = Path.GetDirectoryName(exePath);
+
+                if (string.IsNullOrEmpty(dirPath)) return;
+
+                // 2. 取得目前使用者的 Path 變數
+                var scope = EnvironmentVariableTarget.User;
+                string oldPath = Environment.GetEnvironmentVariable("Path", scope) ?? "";
+
+                // 3. 檢查是否已經存在 (不分大小寫)
+                if (!oldPath.Split(';').Any(p => p.Trim().Equals(dirPath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // 4. 如果不在，就幫使用者接上去
+                    string newPath = oldPath.EndsWith(";") ? oldPath + dirPath : oldPath + ";" + dirPath;
+                    Environment.SetEnvironmentVariable("Path", newPath, scope);
+
+                    // 這裡可以印個 Log，或者在第一次啟動時彈個通知
+                    Console.WriteLine($"[System] 自動註冊環境變數成功: {dirPath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // 如果權限不足或其他原因失敗，靜默處理，不影響主程式啟動
+                Log("Error", $"環境變數註冊失敗: {ex.Message}");
+            }
+        }
+        // ==========================================
+        // 【全新邏輯】檢查金鑰，決定要隱藏還是顯示拖曳提示
+        // ==========================================
+        private void CheckAndLoadKey()
+        {
+            if (File.Exists(Program.ConfigPath))
+            {
+                string path = File.ReadAllText(Program.ConfigPath).Trim();
+                if (File.Exists(path) && path.EndsWith(".json"))
                 {
                     _isKeyValid = true;
                     _speechService = new CrossPlatformSpeechService(path);
                     _errorCorrectionService = new ErrorCorrectionService();
                     _speechService.OnFinalResultReceived += OnSpeechResultReceived;
-                    Log("System", "✅ 引擎就緒 (支援自訂詞庫)");
+
+                    this.Hide(); // 有金鑰，乖乖躲到背景
+                    Log("System", "✅ 引擎就緒");
+                    return;
                 }
             }
 
-            _hook = new TaskPoolGlobalHook(); _hook.KeyPressed += OnKeyPressed; _hook.RunAsync();
+            // ⚠️ 沒有金鑰：強制顯示在螢幕下方，並提示使用者拖曳
+            PositionWindow();
+            this.Show();
+            StatusText.Foreground = Avalonia.Media.Brushes.Yellow;
+            StatusText.Text = "👉 請將 Google 金鑰 (.json) 拖曳到此視窗";
+        }
+
+        // ==========================================
+        // 【終極 UX】處理使用者把檔案拖曳進視窗的動作
+        // ==========================================
+        private async void OnFileDropped(object? sender, DragEventArgs e)
+        {
+            // 抓取拖曳進來的檔案
+            var files = e.Data.GetFiles();
+            if (files != null)
+            {
+                var file = files.FirstOrDefault();
+                if (file != null)
+                {
+                    string path = file.TryGetLocalPath() ?? "";
+
+                    if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // 儲存金鑰並重新載入
+                        File.WriteAllText(Program.ConfigPath, path);
+                        CheckAndLoadKey(); // 重新觸發載入邏輯
+
+                        StatusText.Foreground = Avalonia.Media.Brushes.LimeGreen;
+                        StatusText.Text = "✅ 設定完成！請雙擊 Ctrl 開始使用";
+                        await Task.Delay(3000); // 顯示三秒後自動收合
+                        this.Hide();
+                    }
+                    else
+                    {
+                        StatusText.Foreground = Avalonia.Media.Brushes.OrangeRed;
+                        StatusText.Text = "❌ 格式錯誤，請拖曳 .json 檔案";
+                        await Task.Delay(2000);
+                        StatusText.Foreground = Avalonia.Media.Brushes.Yellow;
+                        StatusText.Text = "👉 請將 Google 金鑰 (.json) 拖曳到此視窗";
+                    }
+                }
+            }
+        }
+
+        private void PositionWindow()
+        {
+            if (this.Screens.Primary != null)
+            {
+                var rect = this.Screens.Primary.WorkingArea;
+                this.Position = new Avalonia.PixelPoint((rect.Width - (int)this.Width) / 2, rect.Height - (int)this.Height - 100);
+            }
         }
 
         private void Log(string tag, string msg) { Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [{tag}] {msg}"); Dispatcher.UIThread.Post(() => StatusText.Text = msg); }
@@ -40,8 +143,6 @@ namespace VoiceAgent.Win
 
         private void OnKeyPressed(object? sender, KeyboardHookEventArgs e)
         {
-            // 【核心修復】：如果神之手正在貼上文字，忽略所有鍵盤監聽！
-            // 防止神之手送出的 Ctrl 鍵被誤判為使用者雙擊。
             if (_speechService != null && _speechService.IsProcessing) return;
 
             string key = e.Data.KeyCode.ToString();
@@ -60,14 +161,16 @@ namespace VoiceAgent.Win
             if (this.IsVisible) { this.Hide(); if (_isKeyValid && _speechService != null && _speechService.IsListening) _speechService.StopListening(); }
             else
             {
-                if (this.Screens.Primary != null) { var rect = this.Screens.Primary.WorkingArea; this.Position = new Avalonia.PixelPoint((rect.Width - (int)this.Width) / 2, rect.Height - (int)this.Height - 100); }
+                PositionWindow();
                 this.Show();
-                if (!_isKeyValid) 
+
+                if (!_isKeyValid)
                 {
-                    StatusText.Foreground = Avalonia.Media.Brushes.OrangeRed;
-                    Log("Warning", "⚠️ 請關閉程式，並使用 -key 指令綁定金鑰！");
-                    await Task.Delay(3500); this.Hide(); return; 
+                    StatusText.Foreground = Avalonia.Media.Brushes.Yellow;
+                    StatusText.Text = "👉 請將 Google 金鑰 (.json) 拖曳到此視窗";
+                    return;
                 }
+
                 StatusText.Foreground = Avalonia.Media.Brushes.White;
                 Log("Status", "🎙️ 聆聽中...");
                 await _speechService!.StartListeningAsync();
@@ -77,38 +180,40 @@ namespace VoiceAgent.Win
 
         private async void OnSpeechResultReceived(string transcript)
         {
-            _speechService!.IsProcessing = true; // 開啟神之手護盾，防止觸發 Ctrl
-            Log("STT", $"聽到：「{transcript}」");
+            _speechService!.IsProcessing = true;
+            Log("STT", $"原始辨識：「{transcript}」");
 
             _currentContextText = await WindowsInputInjector.ExtractCurrentTextAsync();
             var apiResponse = await _errorCorrectionService!.CorrectTextAsync(_currentContextText, transcript);
 
-            // ==========================================
-            // 處理輸出與「自訂關鍵字替換」
-            // ==========================================
-            string finalOut = transcript;
-            bool isCommand = false;
+            string finalOut = apiResponse?.CorrectedText ?? transcript;
+            bool isCommand = (apiResponse?.Type == "command");
 
-            if (apiResponse != null)
-            {
-                finalOut = apiResponse.CorrectedText;
-                isCommand = (apiResponse.Type == "command");
-            }
-
-            // 在貼上之前，讀取字典並進行替換
+            // 🌟 【強化比對邏輯】
             var keywords = Program.LoadKeywords();
+
+            // 1. 建立一個「除噪」後的版本用來比對 (去掉空格與中文句號)
+            string cleanOut = finalOut.Replace(" ", "").Replace("　", "").Replace("。", "");
+
             foreach (var kvp in keywords)
             {
-                finalOut = finalOut.Replace(kvp.Key, kvp.Value);
+                string key = kvp.Key.Trim();
+                string value = kvp.Value.Trim();
+
+                // 2. 如果除噪後的文字包含關鍵字，就在原始文字中執行替換
+                if (cleanOut.Contains(key))
+                {
+                    finalOut = finalOut.Replace(key, value);
+                }
             }
 
-            Log("API", $"{(isCommand ? "執行覆寫" : "執行附加")}: \"{finalOut}\"");
+            Log("API", $"輸出：\"{finalOut}\"");
 
             if (isCommand) await WindowsInputInjector.ReplaceEntireTextAsync(finalOut);
             else await WindowsInputInjector.AppendTextAtEndAsync(finalOut);
 
             _speechService.ResetVoiceTimeout();
-            _speechService.IsProcessing = false; // 關閉神之手護盾
+            _speechService.IsProcessing = false;
             Log("Status", "🎙️ 繼續聆聽...");
         }
 

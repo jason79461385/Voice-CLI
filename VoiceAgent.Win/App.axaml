@@ -2,9 +2,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="VoiceAgent.Win.App"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="avares://VoiceAssistant/Assets/icon.ico" 
+                      ToolTipText="VoiceAssistant 語音助理">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="退出程式" Click="OnMenuExitClick" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
 </Application>
