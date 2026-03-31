@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="VoiceAgent.Win.WelcomeWindow"
-        Title="歡迎使用 VoiceAssistant" Width="500" Height="550"
+        Title="歡迎使用 VoiceAssistant" Width="550" Height="650"
         WindowStartupLocation="CenterScreen" Background="#F5F5F5">
     
     <ScrollViewer>
@@ -11,7 +11,7 @@
             
             <Separator Margin="0,10"/>
 
-            <TextBlock Text="核心操作" FontWeight="Bold" FontSize="16"/>
+            <TextBlock Text="1. 核心操作" FontWeight="Bold" FontSize="16" Foreground="#1E1E1E"/>
             <Border Background="White" CornerRadius="8" Padding="15" BoxShadow="0 2 5 0 #22000000">
                 <StackPanel Spacing="8">
                     <TextBlock Text="• 連按兩下 [Ctrl]：開啟 / 關閉語音輸入" Foreground="#333333"/>
@@ -19,7 +19,19 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Text="進階指令 (CLI)" FontWeight="Bold" FontSize="16" Margin="0,10,0,0"/>
+            <TextBlock Text="2. 如何獲取 Google 金鑰？" FontWeight="Bold" FontSize="16" Foreground="#1E1E1E" Margin="0,10,0,0"/>
+            <Border Background="#E6F2FF" BorderBrush="#CCE5FF" BorderThickness="1" CornerRadius="8" Padding="15">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="若您還沒有金鑰，請依照以下步驟免費申請：" FontWeight="Bold" Foreground="#005C99" FontSize="13"/>
+                    <TextBlock Text="1. 前往 Google Cloud Console (console.cloud.google.com)" Foreground="#004C80" FontSize="13" TextWrapping="Wrap"/>
+                    <TextBlock Text="2. 建立一個新專案，並搜尋啟用「Cloud Speech-to-Text API」" Foreground="#004C80" FontSize="13" TextWrapping="Wrap"/>
+                    <TextBlock Text="3. 左側選單進入「API 與服務」➔「憑證」，點擊「建立憑證」➔「服務帳戶」" Foreground="#004C80" FontSize="13" TextWrapping="Wrap"/>
+                    <TextBlock Text="4. 建立完成後，點擊該帳戶進入「金鑰」分頁 ➔「新增金鑰」➔ 選擇「JSON」" Foreground="#004C80" FontSize="13" TextWrapping="Wrap"/>
+                    <TextBlock Text="5. 將下載下來的 JSON 檔案，拖曳到本程式的黑色懸浮窗即可！" Foreground="#005C99" FontWeight="Bold" FontSize="13" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="3. 進階指令 (CLI)" FontWeight="Bold" FontSize="16" Foreground="#1E1E1E" Margin="0,10,0,0"/>
             <Border Background="#1E1E1E" CornerRadius="8" Padding="15">
                 <StackPanel Spacing="5">
                     <TextBlock Text="VoiceAssistant -addword &quot;我的地址&quot; &quot;台北市...&quot;" Foreground="#00FFCC" FontSize="13" FontFamily="Consolas"/>
@@ -32,12 +44,13 @@
             <TextBlock Text="💡 提示：本程式已自動嘗試註冊環境變數。若指令無效，請重啟您的終端機視窗。" 
                        FontSize="12" Foreground="#888888" TextWrapping="Wrap" FontStyle="Italic"/>
 
-            <Button Content="Start!!!" 
+            <Button Content="我知道了，開始使用！" 
                     HorizontalAlignment="Center" 
-                    Margin="0,20,0,0" 
-                    Padding="30,10"
+                    Margin="0,20,0,10" 
+                    Padding="40,12"
                     Background="#007ACC" 
                     Foreground="White"
+                    FontSize="16"
                     FontWeight="Bold"
                     Click="CloseClick"/>
         </StackPanel>

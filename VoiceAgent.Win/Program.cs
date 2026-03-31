@@ -12,7 +12,7 @@ namespace VoiceAgent.Win
     {
         // 🌟 【關鍵修復】取得 EXE 真正的所在資料夾
         public static readonly string AppDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppDomain.CurrentDomain.BaseDirectory;
-        
+
         // 🌟 使用絕對路徑，確保無論在哪裡下指令，檔案都存在 EXE 旁邊
         public static readonly string ConfigPath = Path.Combine(AppDir, "voice_agent_config.txt");
         public static readonly string KeywordFile = Path.Combine(AppDir, "keywords.json");
@@ -55,6 +55,12 @@ namespace VoiceAgent.Win
                         Console.WriteLine($"{AppName} -autostart <true/false>  : 設定開機是否自動啟動助理");
                         Console.WriteLine($"{AppName} -reset                   : 清空所有設定 (金鑰與詞庫)");
                         Console.WriteLine($"{AppName} -setpath                 : (手動) 將程式加入全域環境變數");
+                        Console.WriteLine("--------------------------------------------------");
+                        Console.WriteLine("💡 【如何獲取 Google STT 金鑰 (JSON)？】");
+                        Console.WriteLine("  1. 前往 Google Cloud Console (https://console.cloud.google.com/)");
+                        Console.WriteLine("  2. 建立新專案，並搜尋啟用「Cloud Speech-to-Text API」");
+                        Console.WriteLine("  3. 前往「API 與服務」>「憑證」，建立一個「服務帳戶」");
+                        Console.WriteLine("  4. 點選該服務帳戶的「金鑰」分頁，選擇「新增金鑰」>「JSON」並下載");
                         Console.WriteLine("==================================================");
                         return;
                     }
@@ -156,7 +162,7 @@ namespace VoiceAgent.Win
                         Environment.Exit(0);
                     }
 
-                    Environment.Exit(0); 
+                    Environment.Exit(0);
                 }
 
                 // ==========================================
