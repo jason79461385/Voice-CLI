@@ -206,6 +206,12 @@ namespace VoiceAgent.Win
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(transcript))
+                {
+                    WriteDebugLog("[STT] 收到空白 transcript，跳過注入");
+                    return;
+                }
+
                 _speechService!.IsProcessing = true;
                 Log("STT", $"聽到：「{transcript}」");
 

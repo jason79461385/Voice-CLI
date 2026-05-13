@@ -17,7 +17,7 @@ namespace VoiceAgent.Win
     {
         public string GoogleKeyPath { get; set; } = "";
         public int Threshold { get; set; } = 200;
-        public double HoldTime { get; set; } = 3.0; // 預設 0.4 秒極速模式
+        public double HoldTime { get; set; } = 3.0; // 預設 3.0 秒，可設定範圍 0.2~10.0 秒
     }
 
     internal class Program
@@ -115,20 +115,23 @@ namespace VoiceAgent.Win
                     }
                     else if (command == "-holdtime")
                     {
-                        if (args.Length > 1 && double.TryParse(args[1], out double val))
+                        if (args.Length > 1 && double.TryParse(args[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double val))
                         {
-                            if (val < 0.2 || val > 1.5)
+                            if (val < 0.2 || val > 10.0)
                             {
-                                Console.WriteLine("[Error] 錯誤：等待時間必須在 0.2 ~ 1.5 秒之間！");
+                                Console.WriteLine("[Error] 錯誤：等待時間必須在 0.2 ~ 10.0 秒之間！");
+                                Console.WriteLine("       (建議值：快速輸入 0.5~1.0，一般口述 1.5~3.0，長段落 3.0~10.0)");
                             }
                             else
                             {
                                 config.HoldTime = val;
                                 SaveConfig(config);
                                 Console.WriteLine($"[OK] 停頓等待時間已設定為: {val} 秒");
+                                Console.WriteLine("[Info] 提示：此設定同時控制「結束語音偵測」與「彈窗自動收起」的時間。");
+                                Console.WriteLine("       若程式正在運行中，請重新啟動使設定生效。");
                             }
                         }
-                        else Console.WriteLine("[Error] 請輸入數值。");
+                        else Console.WriteLine("[Error] 請輸入數值。範例: -holdtime 2.5");
                         return;
                     }
 
@@ -142,7 +145,7 @@ namespace VoiceAgent.Win
                         Console.WriteLine("==================================================");
                         Console.WriteLine($"-calibrate                 : 🌟 [推薦] 自動偵測環境底噪並設定最佳閥值");
                         Console.WriteLine($"-threshold <數值>          : 手動設定噪音閥值 (目前: {config.Threshold})");
-                        Console.WriteLine($"-holdtime <秒數>           : 設定等待秒數 0.2~1.5 (目前: {config.HoldTime} 秒)");
+                        Console.WriteLine($"-holdtime <秒數>           : 設定靜音等待秒數 0.2~10.0 (目前: {config.HoldTime} 秒)");
                         Console.WriteLine($"{AppName} -key <路徑>              : 綁定 Google STT 金鑰 JSON");
                         Console.WriteLine($"{AppName} -addword <詞> <替換內容> : 新增/修改自訂替換詞彙");
                         Console.WriteLine($"{AppName} -delword <詞>            : 刪除特定的自訂詞彙");
